@@ -72,7 +72,7 @@ const paystackAPI = paystack(process.env.PAYSTACK_SECRET_KEY);
 const placeOrder = async (req, res) => {
     console.log(req.body);
 
-    const frontendUrl = "https://deliveryapp-ui.onrender.com/"
+    const frontendUrl = "https://deliveryapp-ui.onrender.com"
 
     // 'https://deliveryapp-ui.onrender.com';
     // 'http://localhost:3001'
