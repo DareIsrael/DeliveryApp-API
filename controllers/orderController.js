@@ -75,6 +75,7 @@ const placeOrder = async (req, res) => {
     const frontendUrl = "https://deliveryapp-ui.onrender.com"
 
     // 'https://deliveryapp-ui.onrender.com';
+    // 'http://localhost:3001'
 
     try {
         // Clear user's cart data
@@ -110,6 +111,7 @@ const placeOrder = async (req, res) => {
                 ]
             },
             callback_url: `${frontendUrl}/verify?success=true&orderId=${newOrder._id}`
+        
         };
 
         const response = await paystackAPI.transaction.initialize(paymentData);
