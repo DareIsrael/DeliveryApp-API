@@ -22,7 +22,7 @@ app.use(express.json())
 
 // CORS configuration for multiple origins
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'], // Replace with your actual frontend URLs
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://deliveryapp-ui.onrender.com'], // Replace with your actual frontend URLs
   credentials: true, // Allow credentials (cookies, authorization headers, etc.)
 }));
 

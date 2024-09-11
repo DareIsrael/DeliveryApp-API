@@ -124,7 +124,7 @@ const forgotPassword = async (req, res) => {
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
         // Create a reset URL
-        const resetUrl = `http://localhost:3001/resetpassword/${user._id}/${token}`; // Make sure this URL is correct for your frontend
+        const resetUrl = `https://deliveryapp-ui.onrender.com/resetpassword/${user._id}/${token}`; // Make sure this URL is correct for your frontend
 
         // Send the email with nodemailer
         const transporter = nodemailer.createTransport({
