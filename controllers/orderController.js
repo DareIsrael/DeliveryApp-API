@@ -62,7 +62,7 @@
 
 
 // export  default placeOrder
-
+const crypto = require('crypto');
 const orderModel = require("../models/orderModel.js");
 const userModel = require("../models/UserModel.js");
 const paystack = require('paystack-api');
@@ -138,8 +138,8 @@ const placeOrder = async (req, res) => {
 
 
 
-const crypto = require('crypto');
-const orderModel = require("../models/orderModel.js");
+
+
 
 // Webhook route to handle Paystack events
 const handlePaystackWebhook = async (req, res) => {
