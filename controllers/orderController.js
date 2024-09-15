@@ -136,6 +136,49 @@ const placeOrder = async (req, res) => {
     }
 };
 
+
+
+const crypto = require('crypto');
+const orderModel = require("../models/orderModel.js");
+
+// Webhook route to handle Paystack events
+const handlePaystackWebhook = async (req, res) => {
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+
+    // Step 1: Verify the Paystack signature to ensure the request is genuine
+    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+
+    if (hash === req.headers['x-paystack-signature']) {
+        // Step 2: Process the event
+        const event = req.body;
+
+        if (event.event === 'charge.success') {
+            const orderId = event.data.metadata.orderId;
+
+            try {
+                // Step 3: Find the order and update its status to "Paid"
+                const order = await orderModel.findById(orderId);
+                if (order) {
+                    order.paymentStatus = "Paid";
+                    await order.save();
+                    console.log(`Order ${orderId} marked as paid`);
+                }
+            } catch (err) {
+                console.error('Error updating order:', err);
+            }
+        }
+
+        // Return a 200 response to acknowledge receipt of the webhook
+        return res.status(200).send('Webhook processed successfully');
+    } else {
+        // Invalid signature
+        return res.status(401).send('Invalid signature');
+    }
+};
+
+// Export the webhook handler
+
+
 // const verifyOrder = async (req, res) => {
 //     const { orderId, success } = req.body;
 
@@ -237,4 +280,4 @@ const updateStatus = async (req, res) => {
 
 
 
-module.exports = { placeOrder, verifyOrder, userOrder, listOrders, updateStatus };
+module.exports = { placeOrder, verifyOrder, userOrder, listOrders, updateStatus, handlePaystackWebhook};
