@@ -82,6 +82,26 @@ const loginUser = async (req, res) => {
     }
 };
 
+const fetchUsers = async (req, res) => {
+    try {
+      // Find users and project only the desired fields
+      const users = await userModel.find({}, 'name email phoneNumber role');
+      
+      // Respond with the fetched users
+      res.status(200).json({
+        success: true,
+        data: users
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Server Error',
+        error: error.message
+      });
+    }
+  };
+  
+
 const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
   
@@ -170,4 +190,4 @@ const resetPassword = async (req, res) => {
     });
 };
 
-module.exports = { loginUser,loginAdmin, registerUser, forgotPassword, resetPassword };
+module.exports = { loginUser,loginAdmin, registerUser, forgotPassword, resetPassword , fetchUsers};

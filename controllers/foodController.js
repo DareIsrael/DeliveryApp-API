@@ -138,6 +138,34 @@ const listFood = async (req, res) => {
 };
 
 
+const updateFood = async (req, res) => {
+  try {
+      const { id, name, category, price } = req.body;
+
+      // Find and update the food item by its ID
+      const updatedFood = await foodModel.findByIdAndUpdate(
+          id,
+          { name, category, price },
+          { new: true }
+      );
+
+      if (!updatedFood) {
+          return res.status(404).json({ success: false, message: 'Item not found' });
+      }
+
+      res.json({
+          success: true,
+          message: 'Item updated successfully',
+          data: updatedFood,
+      });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error updating item' });
+  }
+};
+
+
+
 
 
 // Remove a food item and its image from Cloudinary
@@ -180,4 +208,4 @@ const removeFood = async (req, res) => {
     }
   };
 
-module.exports = { addFood, listFood, removeFood };
+module.exports = { addFood, listFood, removeFood , updateFood};

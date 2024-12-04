@@ -238,21 +238,69 @@ const userOrder = async (req, res) => {
     }
 };
 
+
+
+ // Assuming this is where your order model is
+
+// List orders based on search query
 const listOrders = async (req, res) => {
     try {
-        const orders = await orderModel.find({});
-        res.json({
-            success: true,
-            data: orders
-        });
+        const { firstname, lastname } = req.query;
+
+        let searchQuery = {};
+
+        // Add search conditions only if parameters are provided
+        if (firstname) {
+            searchQuery['address.firstName'] = { $regex: firstname, $options: 'i' }; // Case-insensitive search
+        }
+        if (lastname) {
+            searchQuery['address.lastName'] = { $regex: lastname, $options: 'i' }; // Case-insensitive search
+        }
+
+        // Fetch orders based on the search criteria or all orders if no criteria
+        const orders = await orderModel.find(searchQuery);
+
+        if (orders.length > 0) {
+            res.json({
+                success: true,
+                data: orders,
+            });
+        } else {
+            res.json({
+                success: true,
+                data: [],
+                message: 'No orders found matching your search',
+            });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: "Server error"
+            message: 'Server error',
         });
     }
 };
+
+module.exports = { listOrders };
+
+
+
+
+// const listOrders = async (req, res) => {
+//     try {
+//         const orders = await orderModel.find({});
+//         res.json({
+//             success: true,
+//             data: orders
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Server error"
+//         });
+//     }
+// };
 
 
     // fetch all orders
