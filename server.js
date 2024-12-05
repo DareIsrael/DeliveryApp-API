@@ -52,6 +52,13 @@ app.get("/", (req, res)=> {
     res.send(" API Working ")
 })
 
+// I paste this while trying to deploy  to vercel
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+
 app.listen(port, () => {
     console.log(`Server started on http://localhost:${port}`)
 })
