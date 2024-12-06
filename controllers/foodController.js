@@ -123,18 +123,46 @@ const addFood = async (req, res) => {
 
 
 // List all food items
+// const listFood = async (req, res) => {
+//     try {
+//         const foods = await foodModel.find({});
+//         res.json({
+//             success: true,
+//             message: "items listed successfully",
+//             data: foods,
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ success: false, message: "Error listing item" });
+//     }
+// };
+
 const listFood = async (req, res) => {
-    try {
-        const foods = await foodModel.find({});
-        res.json({
-            success: true,
-            message: "items listed successfully",
-            data: foods,
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Error listing item" });
-    }
+  try {
+      const { name, category } = req.query;
+
+      // Construct a query object
+      
+
+      // Add search criteria only if name or category is provided
+      if (name || category) {
+          query.$or = [];
+          if (name) query.$or.push({ name: { $regex: name, $options: 'i' } }); // Case-insensitive search
+          if (category) query.$or.push({ category: { $regex: category, $options: 'i' } }); // Case-insensitive search
+      }
+
+      // If no search criteria, query will be empty, fetching all items
+      const foods = await foodModel.find(query);
+
+      res.json({
+          success: true,
+          message: "Items listed successfully",
+          data: foods,
+      });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: "Error listing items" });
+  }
 };
 
 
