@@ -143,7 +143,7 @@ const listFood = async (req, res) => {
 
       // Construct a query object
       
-
+       let query = {};
       // Add search criteria only if name or category is provided
       if (name || category) {
           query.$or = [];
