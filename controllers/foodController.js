@@ -96,6 +96,8 @@ const addFood = async (req, res) => {
             name: req.body.name,
             description: req.body.description,
             price: req.body.price,
+            discount: req.body.discount,
+            initprice: req.body.initprice,
             category: req.body.category,
             image: result.secure_url, // Store Cloudinary image URL
             imageId: result.public_id, // Store Cloudinary image public ID
@@ -139,16 +141,16 @@ const addFood = async (req, res) => {
 
 const listFood = async (req, res) => {
   try {
-      const { name, category } = req.query;
+      const { name } = req.query;
 
       // Construct a query object
       
        let query = {};
       // Add search criteria only if name or category is provided
-      if (name || category) {
+      if (name) {
           query.$or = [];
           if (name) query.$or.push({ name: { $regex: name, $options: 'i' } }); // Case-insensitive search
-          if (category) query.$or.push({ category: { $regex: category, $options: 'i' } }); // Case-insensitive search
+          // if (category) query.$or.push({ category: { $regex: category, $options: 'i' } }); // Case-insensitive search
       }
 
       // If no search criteria, query will be empty, fetching all items
@@ -168,12 +170,12 @@ const listFood = async (req, res) => {
 
 const updateFood = async (req, res) => {
   try {
-      const { id, name, category, price } = req.body;
+      const { id, name, category, price, discount , initprice} = req.body;
 
       // Find and update the food item by its ID
       const updatedFood = await foodModel.findByIdAndUpdate(
           id,
-          { name, category, price },
+          { name, category, price, discount, initprice },
           { new: true }
       );
 

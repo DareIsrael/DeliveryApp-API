@@ -19,7 +19,7 @@ const addToCart = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.json({
             success: false,
             message: "error"
@@ -44,7 +44,7 @@ const removeFromCart = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.json({
             success: false,
             message: "error"

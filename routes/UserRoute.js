@@ -1,12 +1,21 @@
 const express = require("express");
-const { forgotPassword, loginUser, registerUser, resetPassword, loginAdmin, fetchUsers } = require('../controllers/UserController.js');
-// const { authMiddleware, adminMiddleware,} = require("../middleware/auth.js");
+const { forgotPassword, loginUser, confirmUser, registerUser, resetPassword, loginAdmin, fetchUsers } = require('../controllers/UserController.js');
+const { authMiddleware} = require("../middleware/auth.js");
+// const { adminMiddleware } = require("../middleware/adminAuth.js")
+const rateLimit = require("express-rate-limit");
 
 const userRouter = express.Router();
 
+const limiter = rateLimit({
+    windowMs: 2 * 60 * 1000, // 2 minutes
+    max: 5, // limit each IP to 100 requests per windowMs
+    message: "Too many requests, please try again later."
+  });
+
 userRouter.post("/register", registerUser);
-userRouter.post("/login", loginUser);
-userRouter.post("/loginAdmin", loginAdmin);
+userRouter.post("/login", limiter, loginUser);
+userRouter.get('/confirm/:token', confirmUser);
+userRouter.post("/loginAdmin", limiter, loginAdmin);
 userRouter.get('/fetchUsers', fetchUsers)
 userRouter.post("/forgotpassword", forgotPassword);
 userRouter.post("/resetpassword/:id/:token", resetPassword);

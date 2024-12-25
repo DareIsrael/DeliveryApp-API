@@ -43,6 +43,12 @@ const foodSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    discount: {
+        type: String
+    },
+    initprice: {
+        type: String
+    },
     image: {
         type: String, // URL of the image stored in Cloudinary
         required: true

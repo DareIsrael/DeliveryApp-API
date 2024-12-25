@@ -70,13 +70,10 @@ const paystack = require('paystack-api');
 const paystackAPI = paystack(process.env.PAYSTACK_SECRET_KEY);
 
 const placeOrder = async (req, res) => {
-    console.log(req.body);
+    // console.log(req.body);
 
-    const frontendUrl = "https://deliveryapp-ui.onrender.com"
-
-    // 'https://deliveryapp-ui.onrender.com';
-    // 'http://localhost:3001'
-
+    const frontendUrl = process.env.FRONTEND_URL_FRONTEND_LOCAL
+    
     try {
         // Clear user's cart data
         await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
@@ -222,9 +219,27 @@ const verifyOrder = async (req, res) => {
 
 
 
+// const userOrder = async (req, res) => {
+//     try {
+//         const orders = await orderModel.find({ userId: req.body.userId });
+//         res.json({
+//             success: true,
+//             data: orders
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Server error"
+//         });
+//     }
+// };
+
 const userOrder = async (req, res) => {
     try {
-        const orders = await orderModel.find({ userId: req.body.userId });
+        // Sort orders by 'date' in descending order (newest first)
+        const orders = await orderModel.find({ userId: req.body.userId }).sort({ date: -1 });
+        
         res.json({
             success: true,
             data: orders
@@ -237,6 +252,7 @@ const userOrder = async (req, res) => {
         });
     }
 };
+
 
 
 
@@ -258,7 +274,7 @@ const listOrders = async (req, res) => {
         }
 
         // Fetch orders based on the search criteria or all orders if no criteria
-        const orders = await orderModel.find(searchQuery);
+        const orders = await orderModel.find(searchQuery).sort({ date: -1 }); // Sort by date, most recent first
 
         if (orders.length > 0) {
             res.json({
@@ -280,8 +296,6 @@ const listOrders = async (req, res) => {
         });
     }
 };
-
-module.exports = { listOrders };
 
 
 
