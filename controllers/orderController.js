@@ -72,7 +72,7 @@ const paystackAPI = paystack(process.env.PAYSTACK_SECRET_KEY);
 const placeOrder = async (req, res) => {
     // console.log(req.body);
 
-    const frontendUrl = process.env.FRONTEND_URL_FRONTEND_LOCAL
+    const frontendUrl = process.env.FRONTEND_URL_FRONTEND_HOST
     
     try {
         // Clear user's cart data
