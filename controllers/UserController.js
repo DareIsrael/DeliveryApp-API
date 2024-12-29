@@ -129,8 +129,9 @@ const registerUser = async (req, res) => {
 
         // Configure nodemailer transporter
         const transporter = nodemailer.createTransport({
-            host: 'sandbox.smtp.mailtrap.io',
-            port: 2525,
+            host: process.env.SMTP_HOST,
+            port: process.env.EMAIL_PORT,
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USERNAME,
                 pass: process.env.EMAIL_PASSWORD,
@@ -139,7 +140,7 @@ const registerUser = async (req, res) => {
 
         // Email options
         const mailOptions = {
-            from: 'no-reply@example.com',
+            from: process.env.EMAIL_USERNAME,
             to: newUser.email,
             subject: 'Account Confirmation',
             text: `Please confirm your account by clicking the following link: ${confirmationUrl}`,
@@ -149,7 +150,7 @@ const registerUser = async (req, res) => {
         // Send the email
         await transporter.sendMail(mailOptions);
 
-        res.status(201).json({ success: true, message: 'User registered successfully. Please check your email to confirm your account.' });
+        res.status(201).json({ success: true, message: "A confirmation link has been sent to your email address. Please check your inbox or spam folder to confirm your account." });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Error occurred while registering the user" });
@@ -401,8 +402,9 @@ const forgotPassword = async (req, res) => {
 
         // Configure nodemailer transporter
         const transporter = nodemailer.createTransport({
-            host: 'sandbox.smtp.mailtrap.io',
-            port: 2525,
+            host: process.env.SMTP_HOST,
+            port: process.env.EMAIL_PORT,
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USERNAME,
                 pass: process.env.EMAIL_PASSWORD,
@@ -411,7 +413,7 @@ const forgotPassword = async (req, res) => {
 
         // Email options
         const mailOptions = {
-            from: 'no-reply@example.com',
+            from: process.env.EMAIL_USERNAME,
             to: user.email,
             subject: 'Password Reset Request',
             text: `You requested a password reset. Please go to the following link to reset your password: ${resetUrl}`,
