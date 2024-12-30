@@ -264,7 +264,7 @@ const loginAdmin = async (req, res) => {
 
         res.json({ success: true, token });
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.json({ success: false, message: "Error" });
     }
 };
