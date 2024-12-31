@@ -346,18 +346,18 @@ const userOrder = async (req, res) => {
 
   
 // Example backend endpoint to get payment status of an order
-const verifyPayment = async (req, res) => {
-    try {
-      const order = await orderModel.findById(req.params.orderId);
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-      res.json({ paymentStatus: order.paymentStatus }); // paymentStatus is updated by the webhook
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Server error" });
-    }
-  };
+// const verifyPayment = async (req, res) => {
+//     try {
+//       const order = await orderModel.findById(req.params.orderId);
+//       if (!order) {
+//         return res.status(404).json({ message: "Order not found" });
+//       }
+//       res.json({ paymentStatus: order.paymentStatus }); // paymentStatus is updated by the webhook
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ message: "Server error" });
+//     }
+//   };
   
 
 
