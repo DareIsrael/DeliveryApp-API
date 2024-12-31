@@ -447,4 +447,4 @@ const updateStatus = async (req, res) => {
 
 
 
-module.exports = { placeOrder, verifyOrder, verifyPayment, userOrder, listOrders, updateStatus, handlePaystackWebhook};
+module.exports = { placeOrder, verifyOrder, userOrder, listOrders, updateStatus, handlePaystackWebhook};
