@@ -4,6 +4,7 @@ const orderModel = require("../models/orderModel.js");
 const userModel = require("../models/UserModel.js");
 const paystack = require('paystack-api');
 
+
 const paystackAPI = paystack(process.env.PAYSTACK_SECRET_KEY);
 
 // const placeOrder = async (req, res) => {
@@ -136,7 +137,11 @@ const paystackAPI = paystack(process.env.PAYSTACK_SECRET_KEY);
 
 
 
-// const paystackAPI = paystack(process.env.PAYSTACK_SECRET_KEY);
+// main code
+
+
+
+
 
 const placeOrder = async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL_FRONTEND_HOST;
@@ -189,7 +194,8 @@ const placeOrder = async (req, res) => {
         if (response.status) {
             res.json({
                 success: true,
-                session_url: response.data.authorization_url
+                session_url: response.data.authorization_url,
+            
             });
         } else {
             res.json({
@@ -206,67 +212,112 @@ const placeOrder = async (req, res) => {
     }
 };
 
+
+
+
+
 // Webhook route to handle Paystack events
+
+
 const handlePaystackWebhook = async (req, res) => {
     const secret = process.env.PAYSTACK_SECRET_KEY;
-
-    // Step 1: Verify the Paystack signature to ensure the request is genuine
+    
+    // Verify the Paystack signature
     const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+    if (hash !== req.headers['x-paystack-signature']) {
+        return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
 
-    if (hash === req.headers['x-paystack-signature']) {
-        // Step 2: Process the event
+    try {
+        // Retrieve the event from the webhook payload
         const event = req.body;
+        const { status, reference, data } = event;
+        
+        // Find the order using the reference from the Paystack webhook
+        const order = await orderModel.findOne({ 'metadata.orderId': data.metadata.order_id });
 
-        if (event.event === 'charge.success') {
-            const orderId = event.data.metadata.orderId;
-
-            try {
-                // Step 3: Find the order and update its status to "Paid"
-                const order = await orderModel.findById(orderId);
-                if (order) {
-                    order.paymentStatus = "Paid";
-                    await order.save();
-                }
-            } catch (err) {
-                console.error('Error updating order:', err);
+        if (order) {
+            if (status === 'success') {
+                // Update order payment status to 'Paid'
+                await orderModel.findByIdAndUpdate(order._id, {
+                    paymentStatus: 'Paid',
+                    payment: true,
+                    status: 'Order Processing' // or 'Ready for Delivery' based on your flow
+                });
+                res.status(200).json({ success: true, message: "Payment successful" });
+            } else {
+                // If payment failed, mark the order as failed
+                await orderModel.findByIdAndUpdate(order._id, { paymentStatus: 'Failed' });
+                res.status(200).json({ success: false, message: "Payment failed" });
             }
+        } else {
+            res.status(404).json({ success: false, message: "Order not found" });
         }
-
-        // Return a 200 response to acknowledge receipt of the webhook
-        return res.status(200).send('Webhook processed successfully');
-    } else {
-        // Invalid signature
-        return res.status(401).send('Invalid signature');
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error processing webhook" });
     }
 };
 
-const verifyOrder = async (req, res) => {
-    const { orderId, success } = req.body;
 
-    
+
+
+const verifyOrder = async (req, res) => {
+    const { orderId, success } = req.body; // Get orderId and success from the frontend
 
     try {
+        const order = await orderModel.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
         if (success === "true") {
-            
-            await orderModel.findByIdAndUpdate(orderId, { payment: true });
+            // Update the order payment status to true (payment successful)
+            await orderModel.findByIdAndUpdate(orderId, { payment: true, paymentStatus: 'Paid' });
             res.json({ success: true, message: "Payment verified and order updated." });
         } else {
-            
-            const deletedOrder = await orderModel.findByIdAndDelete(orderId);
-
-            if (deletedOrder) {
-              
-                res.json({ success: false, message: "Payment failed. Order deleted." });
-            } else {
-                
-                res.json({ success: false, message: "Payment failed. Order not found." });
-            }
+            // Handle failed payment (can delete or update order status)
+            await orderModel.findByIdAndUpdate(orderId, { paymentStatus: 'Failed' });
+            res.json({ success: false, message: "Payment failed. Order updated." });
         }
     } catch (error) {
-        
+        console.error(error);
         res.status(500).json({ success: false, message: "Server error during payment verification." });
     }
 };
+
+
+
+
+// main code
+
+// const verifyOrder = async (req, res) => {
+//     const { orderId, success } = req.body;
+
+    
+
+//     try {
+//         if (success === "true") {
+            
+//             await orderModel.findByIdAndUpdate(orderId, { payment: true });
+//             res.json({ success: true, message: "Payment verified and order updated." });
+//         } else {
+            
+//             const deletedOrder = await orderModel.findByIdAndDelete(orderId);
+
+//             if (deletedOrder) {
+              
+//                 res.json({ success: false, message: "Payment failed. Order deleted." });
+//             } else {
+                
+//                 res.json({ success: false, message: "Payment failed. Order not found." });
+//             }
+//         }
+//     } catch (error) {
+        
+//         res.status(500).json({ success: false, message: "Server error during payment verification." });
+//     }
+// };
 
 
 
