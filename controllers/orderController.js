@@ -221,44 +221,46 @@ const placeOrder = async (req, res) => {
 
 const handlePaystackWebhook = async (req, res) => {
     const secret = process.env.PAYSTACK_SECRET_KEY;
-    
-    // Verify the Paystack signature
-    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+
+    // Validate the Paystack signature
+    const hash = crypto
+        .createHmac('sha512', secret)
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+
     if (hash !== req.headers['x-paystack-signature']) {
-        return res.status(400).json({ success: false, message: "Invalid signature" });
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
+
+    const event = req.body;
 
     try {
-        // Retrieve the event from the webhook payload
-        const event = req.body;
-        const { status, reference, data } = event;
-        
-        // Find the order using the reference from the Paystack webhook
-        const order = await orderModel.findOne({ 'metadata.orderId': data.metadata.order_id });
+        if (event.event === 'charge.success') {
+            const { reference, metadata } = event.data;
 
-        if (order) {
-            if (status === 'success') {
-                // Update order payment status to 'Paid'
-                await orderModel.findByIdAndUpdate(order._id, {
-                    paymentStatus: 'Paid',
-                    payment: true,
-                    status: 'Order Processing' // or 'Ready for Delivery' based on your flow
-                });
-                res.status(200).json({ success: true, message: "Payment successful" });
-            } else {
-                // If payment failed, mark the order as failed
-                await orderModel.findByIdAndUpdate(order._id, { paymentStatus: 'Failed' });
-                res.status(200).json({ success: false, message: "Payment failed" });
+            // Use metadata.orderId or reference to find the order in your database
+            const order = await orderModel.findById(metadata.orderId);
+
+            if (!order) {
+                return res.status(404).json({ success: false, message: 'Order not found' });
             }
-        } else {
-            res.status(404).json({ success: false, message: "Order not found" });
+
+            // Update the payment status in the database
+            order.paymentStatus = 'Paid';
+            order.payment = true;
+            await order.save();
+
+            console.log('Order payment verified and updated successfully!');
+        } else if (event.event === 'charge.failed') {
+            console.log('Payment failed event received');
         }
+
+        res.sendStatus(200); // Always respond with 200 to acknowledge receipt
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Error processing webhook" });
+        console.error('Error handling webhook:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 };
-
 
 
 
