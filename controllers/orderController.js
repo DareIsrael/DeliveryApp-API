@@ -263,9 +263,8 @@ const handlePaystackWebhook = async (req, res) => {
 };
 
 
-
 const verifyOrder = async (req, res) => {
-    const { orderId, success } = req.body; // Get orderId and success from the frontend
+    const { orderId } = req.body;
 
     try {
         const order = await orderModel.findById(orderId);
@@ -273,12 +272,13 @@ const verifyOrder = async (req, res) => {
             return res.status(404).json({ success: false, message: "Order not found" });
         }
 
-        if (success === "true") {
-            // Update the order payment status to true (payment successful)
+        // Fetch the payment status directly from Paystack
+        const response = await paystackAPI.transaction.verify(order.transactionReference);
+
+        if (response.status && response.data.status === 'success') {
             await orderModel.findByIdAndUpdate(orderId, { payment: true, paymentStatus: 'Paid' });
             res.json({ success: true, message: "Payment verified and order updated." });
         } else {
-            // Handle failed payment (can delete or update order status)
             await orderModel.findByIdAndUpdate(orderId, { paymentStatus: 'Failed' });
             res.json({ success: false, message: "Payment failed. Order updated." });
         }
@@ -287,6 +287,7 @@ const verifyOrder = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error during payment verification." });
     }
 };
+
 
 
 
@@ -343,6 +344,21 @@ const userOrder = async (req, res) => {
 };
 
 
+  
+// Example backend endpoint to get payment status of an order
+const verifyPayment = async (req, res) => {
+    try {
+      const order = await orderModel.findById(req.params.orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json({ paymentStatus: order.paymentStatus }); // paymentStatus is updated by the webhook
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  
 
 
  // Assuming this is where your order model is
@@ -431,4 +447,4 @@ const updateStatus = async (req, res) => {
 
 
 
-module.exports = { placeOrder, verifyOrder, userOrder, listOrders, updateStatus, handlePaystackWebhook};
+module.exports = { placeOrder, verifyOrder, verifyPayment, userOrder, listOrders, updateStatus, handlePaystackWebhook};
