@@ -263,64 +263,57 @@ const handlePaystackWebhook = async (req, res) => {
 };
 
 
-const verifyOrder = async (req, res) => {
-    const { orderId } = req.body;
+// const verifyOrder = async (req, res) => {
+//     const { orderId } = req.body;
+
+//     try {
+//         const order = await orderModel.findById(orderId);
+//         if (!order) {
+//             return res.status(404).json({ success: false, message: "Order not found" });
+//         }
+
+//         // Fetch the payment status directly from Paystack
+//         const response = await paystackAPI.transaction.verify(order.transactionReference);
+
+//         if (response.status && response.data.status === 'success') {
+//             await orderModel.findByIdAndUpdate(orderId, { payment: true, paymentStatus: 'Paid' });
+//             res.json({ success: true, message: "Payment verified and order updated." });
+//         } else {
+//             await orderModel.findByIdAndUpdate(orderId, { paymentStatus: 'Failed' });
+//             res.json({ success: false, message: "Payment failed. Order updated." });
+//         }
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ success: false, message: "Server error during payment verification." });
+//     }
+// };
+
+
+
+// Backend: Endpoint to get the payment status of an order
+const getPaymentStatus = async (req, res) => {
+    const { orderId } = req.params;  // Extract orderId from URL params
 
     try {
+        // Fetch the order from the database by orderId
         const order = await orderModel.findById(orderId);
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found" });
         }
 
-        // Fetch the payment status directly from Paystack
-        const response = await paystackAPI.transaction.verify(order.transactionReference);
-
-        if (response.status && response.data.status === 'success') {
-            await orderModel.findByIdAndUpdate(orderId, { payment: true, paymentStatus: 'Paid' });
-            res.json({ success: true, message: "Payment verified and order updated." });
-        } else {
-            await orderModel.findByIdAndUpdate(orderId, { paymentStatus: 'Failed' });
-            res.json({ success: false, message: "Payment failed. Order updated." });
-        }
+        // Respond with the order payment status
+        res.json({ success: true, paymentStatus: order.paymentStatus });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: "Server error during payment verification." });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
-
+// Example route to use the above function
 
 
 
 // main code
-
-// const verifyOrder = async (req, res) => {
-//     const { orderId, success } = req.body;
-
-    
-
-//     try {
-//         if (success === "true") {
-            
-//             await orderModel.findByIdAndUpdate(orderId, { payment: true });
-//             res.json({ success: true, message: "Payment verified and order updated." });
-//         } else {
-            
-//             const deletedOrder = await orderModel.findByIdAndDelete(orderId);
-
-//             if (deletedOrder) {
-              
-//                 res.json({ success: false, message: "Payment failed. Order deleted." });
-//             } else {
-                
-//                 res.json({ success: false, message: "Payment failed. Order not found." });
-//             }
-//         }
-//     } catch (error) {
-        
-//         res.status(500).json({ success: false, message: "Server error during payment verification." });
-//     }
-// };
 
 
 
@@ -447,4 +440,4 @@ const updateStatus = async (req, res) => {
 
 
 
-module.exports = { placeOrder, verifyOrder, userOrder, listOrders, updateStatus, handlePaystackWebhook};
+module.exports = { placeOrder, userOrder, getPaymentStatus,listOrders, updateStatus, handlePaystackWebhook};
