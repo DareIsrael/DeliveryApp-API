@@ -170,12 +170,12 @@ const listFood = async (req, res) => {
 
 const updateFood = async (req, res) => {
   try {
-      const { id, name, category, price, discount , initprice} = req.body;
+      const { id, name, category, price, discount , initprice, description} = req.body;
 
       // Find and update the food item by its ID
       const updatedFood = await foodModel.findByIdAndUpdate(
           id,
-          { name, category, price, discount, initprice },
+          { name, category, price, discount, initprice, description },
           { new: true }
       );
 
