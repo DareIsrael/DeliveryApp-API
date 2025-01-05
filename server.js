@@ -6,6 +6,7 @@ const userRouter = require("./routes/UserRoute.js");
 require('dotenv').config();
 const cartRouter = require("./routes/cartRoute.js");
 const orderRouter = require("./routes/orderRoute.js");
+const reviewRoutes = require("./routes/reviewRoute.js");
 
 
 
@@ -44,6 +45,7 @@ app.use("/api/food", foodRouter)
 app.use("/api/user", userRouter)
 app.use("/api/cart", cartRouter)
 app.use("/api/order", orderRouter)
+app.use("/api/reviews", reviewRoutes);
 
 app.get("/", (req, res)=> {
     res.send(" API Working ")

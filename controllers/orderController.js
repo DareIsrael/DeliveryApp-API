@@ -166,30 +166,41 @@ const placeOrder = async (req, res) => {
         }
         
         // Ensure the email is available
-        const email = user.email;
+        // const email = user.email;
+        const { name, email } = user;
         if (!email) {
             return res.status(400).json({ success: false, message: "User email not found" });
         }
+
+        
 
         // Prepare payment data
         const paymentData = {
             email: email,
             amount: req.body.amount * 100, // Convert to kobo
+            name : name,
             metadata: {
                 orderId: newOrder._id,
+                
                 custom_fields: [
-                    {
-                        display_name: "Order ID",
-                        variable_name: "order_id",
+                     {
+                       display_name: "Order ID",
+                         variable_name: "order_id",
                         value: newOrder._id
                     }
-                ]
+                ],
+               
+                
+                
             },
+            
             callback_url: `${frontendUrl}/verify?success=true&orderId=${newOrder._id}`
         };
 
         // Initialize Paystack payment
         const response = await paystackAPI.transaction.initialize(paymentData);
+        
+       
 
         if (response.status) {
             res.json({
@@ -213,14 +224,12 @@ const placeOrder = async (req, res) => {
 };
 
 
-
-
-
 // Webhook route to handle Paystack events
 
 
 const handlePaystackWebhook = async (req, res) => {
     const secret = process.env.PAYSTACK_SECRET_KEY;
+    
 
     // Validate the Paystack signature
     const hash = crypto
@@ -250,6 +259,8 @@ const handlePaystackWebhook = async (req, res) => {
             order.payment = true;
             await order.save();
 
+           
+
             console.log('Order payment verified and updated successfully!');
         } else if (event.event === 'charge.failed') {
             console.log('Payment failed event received');
@@ -262,54 +273,56 @@ const handlePaystackWebhook = async (req, res) => {
     }
 };
 
+// main code
 
 // const verifyOrder = async (req, res) => {
-//     const { orderId } = req.body;
+//     const { orderId, success } = req.body;
+
+//     // console.log(req.body)
 
 //     try {
-//         const order = await orderModel.findById(orderId);
-//         if (!order) {
-//             return res.status(404).json({ success: false, message: "Order not found" });
-//         }
-
-//         // Fetch the payment status directly from Paystack
-//         const response = await paystackAPI.transaction.verify(order.transactionReference);
-
-//         if (response.status && response.data.status === 'success') {
-//             await orderModel.findByIdAndUpdate(orderId, { payment: true, paymentStatus: 'Paid' });
+//         if (success === "true") {
+//             await orderModel.findByIdAndUpdate(orderId, { payment: true });
 //             res.json({ success: true, message: "Payment verified and order updated." });
 //         } else {
-//             await orderModel.findByIdAndUpdate(orderId, { paymentStatus: 'Failed' });
-//             res.json({ success: false, message: "Payment failed. Order updated." });
+//             await orderModel.findByIdAndDelete(orderId);
+//             res.json({ success: false, message: "Payment failed. Order deleted." });
 //         }
 //     } catch (error) {
-//         console.error(error);
+//         console.error("Error verifying payment:", error);
 //         res.status(500).json({ success: false, message: "Server error during payment verification." });
 //     }
 // };
 
 
-
-// Backend: Endpoint to get the payment status of an order
-const getPaymentStatus = async (req, res) => {
-    const { orderId } = req.params;  // Extract orderId from URL params
+const verifyOrder = async (req, res) => {
+    const { orderId } = req.body;
 
     try {
-        // Fetch the order from the database by orderId
         const order = await orderModel.findById(orderId);
+
         if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found" });
+            return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        // Respond with the order payment status
-        res.json({ success: true, paymentStatus: order.paymentStatus });
+        if (order.paymentStatus === 'Paid') {
+            return res.json({ success: true, message: 'Payment verified and order updated.' });
+        } else if (order.paymentStatus === 'Failed') {
+            return res.json({ success: false, message: 'Payment failed. Please try again.' });
+        } else {
+            return res.json({ success: false, message: 'Verifying your payment, please wait...' });
+        }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error verifying payment:', error);
+        res.status(500).json({ success: false, message: 'Server error during payment verification.' });
     }
 };
 
+
 // Example route to use the above function
+
+
+
 
 
 
@@ -337,21 +350,6 @@ const userOrder = async (req, res) => {
 };
 
 
-  
-// Example backend endpoint to get payment status of an order
-// const verifyPayment = async (req, res) => {
-//     try {
-//       const order = await orderModel.findById(req.params.orderId);
-//       if (!order) {
-//         return res.status(404).json({ message: "Order not found" });
-//       }
-//       res.json({ paymentStatus: order.paymentStatus }); // paymentStatus is updated by the webhook
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).json({ message: "Server error" });
-//     }
-//   };
-  
 
 
  // Assuming this is where your order model is
@@ -440,4 +438,4 @@ const updateStatus = async (req, res) => {
 
 
 
-module.exports = { placeOrder, userOrder, getPaymentStatus,listOrders, updateStatus, handlePaystackWebhook};
+module.exports = { placeOrder, updateStatus, userOrder,listOrders, verifyOrder, handlePaystackWebhook};

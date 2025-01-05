@@ -214,12 +214,13 @@ const loginUser = async (req, res) => {
 
         // Generate a token
         const token = createToken(user._id);
-
+       
         res.json({ success: true, token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Error occurred while logging in" });
     }
+   
 };
 
 const fetchUsers = async (req, res) => {
