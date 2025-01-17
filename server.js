@@ -23,7 +23,7 @@ app.use(express.json())
 
 // CORS configuration for multiple origins
 app.use(cors({
-  origin: [process.env.FRONTEND_URL_ADMIN_LOCAL, process.env.FRONTEND_URL_FRONTEND_LOCAL, process.env.FRONTEND_URL_FRONTEND_HOST], // Replace with your actual frontend URLs
+  origin: [process.env.FRONTEND_URL_ADMIN_LOCAL, process.env.FRONTEND_URL_FRONTEND_LOCAL, process.env.FRONTEND_URL_FRONTEND_HOST, process.env.ADMIN_URL_FRONTEND_HOST], // Replace with your actual frontend URLs
   credentials: true, // Allow credentials (cookies, authorization headers, etc.)
 }));
 
