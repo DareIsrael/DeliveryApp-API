@@ -148,7 +148,7 @@ const placeOrder = async (req, res) => {
     
     try {
         // Clear user's cart data
-        await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
+        // await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
 
         // Create and save a new order
         const newOrder = new orderModel({
@@ -276,37 +276,49 @@ const handlePaystackWebhook = async (req, res) => {
 // main code
 
 // const verifyOrder = async (req, res) => {
-//     const { orderId, success } = req.body;
-
-//     // console.log(req.body)
+//     const { orderId } = req.body;
 
 //     try {
-//         if (success === "true") {
-//             await orderModel.findByIdAndUpdate(orderId, { payment: true });
-//             res.json({ success: true, message: "Payment verified and order updated." });
+//         const order = await orderModel.findById(orderId);
+        
+
+//         if (!order) {
+//             return res.status(404).json({ success: false, message: 'Order not found' });
+//         }
+
+//         if (order.paymentStatus === 'Paid') {
+           
+//             return res.json({ success: true, message: 'Payment verified and order updated.' });
+//         } else if (order.paymentStatus === 'Failed') {
+//             return res.json({ success: false, message: 'Payment failed. Please try again.' });
 //         } else {
-//             await orderModel.findByIdAndDelete(orderId);
-//             res.json({ success: false, message: "Payment failed. Order deleted." });
+//             return res.json({ success: false, message: 'Verifying your payment, please wait...' });
 //         }
 //     } catch (error) {
-//         console.error("Error verifying payment:", error);
-//         res.status(500).json({ success: false, message: "Server error during payment verification." });
+//         console.error('Error verifying payment:', error);
+//         res.status(500).json({ success: false, message: 'Server error during payment verification.' });
 //     }
 // };
 
-
 const verifyOrder = async (req, res) => {
-    const { orderId } = req.body;
+    const { orderId } = req.body;  // Only orderId is needed since userId is part of the order
 
     try {
+        // Step 1: Find the order by its orderId
         const order = await orderModel.findById(orderId);
 
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
+
+        // Step 3: If payment is successful (paid), clear the cart for that user
         if (order.paymentStatus === 'Paid') {
-            return res.json({ success: true, message: 'Payment verified and order updated.' });
+            // Step 4: Clear the user's cart using userId from the order
+            const userId = order.userId;  // Get userId from the order
+            await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
+            return res.json({ success: true, message: 'Payment verified and cart cleared.' });
         } else if (order.paymentStatus === 'Failed') {
             return res.json({ success: false, message: 'Payment failed. Please try again.' });
         } else {
@@ -317,7 +329,6 @@ const verifyOrder = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error during payment verification.' });
     }
 };
-
 
 // Example route to use the above function
 
