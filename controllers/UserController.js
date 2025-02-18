@@ -10,84 +10,85 @@ const createToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// Register user
+
 
 // const registerUser = async (req, res) => {
 //     const { name, password, passwordConfirm, email, phoneNumber } = req.body;
+    
 //     try {
 //         // Check if user already exists
 //         const exists = await userModel.findOne({ email });
 //         if (exists) {
-//             return res.json({ success: false, message: "User already exists" });
+//             return res.status(400).json({ success: false, message: "User already exists" });
 //         }
 
-//         // Validate email format & strong password
+//         // Validate email format and strong password
 //         if (!validator.isEmail(email)) {
-//             return res.json({ success: false, message: "Please enter a valid email" });
+//             return res.status(400).json({ success: false, message: "Please enter a valid email" });
 //         }
 
 //         if (password.length < 8) {
-//             return res.json({ success: false, message: "Please enter a strong password" });
+//             return res.status(400).json({ success: false, message: "Please enter a strong password (at least 8 characters)" });
 //         }
 
 //         if (password !== passwordConfirm) {
 //             return res.status(400).json({ success: false, message: "Passwords do not match" });
 //         }
 
-//         // Create a new user
+//         // Create a new user instance
 //         const newUser = new userModel({
 //             name,
 //             email,
 //             phoneNumber,
-//             password
-//                 // Password will be hashed by the pre('save') middleware
+//             password, // Password will be hashed by the pre('save') middleware
 //         });
 
-//         // Save the user
-//         const user = await newUser.save();
+//         // Generate a confirmation token
+//         const confirmationToken = crypto.randomBytes(32).toString('hex');
+//         newUser.confirmationToken = crypto.createHash('sha256').update(confirmationToken).digest('hex');
+//         newUser.confirmationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // Token expires in 24 hours
 
-//         // Generate a token
-//         const token = createToken(user._id);
+//         // Save the user to the database
+//         await newUser.save();
 
-//         res.json({ success: true, token });
+//         // Create confirmation URL
+//         const confirmationUrl = `${process.env.FRONTEND_URL_FRONTEND_HOST}/confirm/${confirmationToken}`;
+
+//         // Configure nodemailer transporter
+//         const transporter = nodemailer.createTransport({
+//             host: process.env.SMTP_HOST,
+//             port: process.env.EMAIL_PORT,
+//             secure: false,
+//             auth: {
+//                 user: process.env.EMAIL_USERNAME,
+//                 pass: process.env.EMAIL_PASSWORD,
+//             },
+//         });
+
+//         // Email options
+//         const mailOptions = {
+//             from: process.env.EMAIL_USERNAME,
+//             to: newUser.email,
+//             subject: 'Account Confirmation',
+//             text: `Please confirm your account by clicking the following link: ${confirmationUrl}`,
+//             html: `<p>Please confirm your account by clicking the following link:</p><a href="${confirmationUrl}">${confirmationUrl}</a>`,
+//         };
+
+//         // Send the email
+//         await transporter.sendMail(mailOptions);
+
+//         res.status(201).json({ success: true, message: "A confirmation link has been sent to your email address. Please check your inbox or spam folder to confirm your account." });
 //     } catch (error) {
-//         console.log(error);
-//         res.json({ success: false, message: "Error" });
+//         console.error(error);
+//         res.status(500).json({ success: false, message: "Error occurred while registering the user" });
 //     }
 // };
 
-// // Login user
-// const loginUser = async (req, res) => {
-//     const { email, password } = req.body;
-  
-//     try {
-//         // Find the user by email
-//         const user = await userModel.findOne({ email });
-//         if (!user) {
-//             return res.json({ success: false, message: "User does not exist" });
-//         }
-
-//         // Check if the provided password matches the stored password
-//         const isMatch = await user.matchPassword(password); // Use the method from the schema
-
-//         if (!isMatch) {
-//             return res.json({ success: false, message: "Invalid credentials" });
-//         }
-
-//         // Generate a token
-//         const token = createToken(user._id);
-
-//         res.json({ success: true, token });
-//     } catch (error) {
-//         console.log(error);
-//         res.json({ success: false, message: "Error" });
-//     }
-// };
 
 
 const registerUser = async (req, res) => {
-    const { name, password, passwordConfirm, email, phoneNumber } = req.body;
-    
+    const { name, password, passwordConfirm, email, phoneNumber, isMobile } = req.body;
+
     try {
         // Check if user already exists
         const exists = await userModel.findOne({ email });
@@ -116,41 +117,69 @@ const registerUser = async (req, res) => {
             password, // Password will be hashed by the pre('save') middleware
         });
 
-        // Generate a confirmation token
-        const confirmationToken = crypto.randomBytes(32).toString('hex');
-        newUser.confirmationToken = crypto.createHash('sha256').update(confirmationToken).digest('hex');
-        newUser.confirmationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // Token expires in 24 hours
+        if (isMobile) {
+            // Generate OTP for mobile app users
+            const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
+            newUser.otp = otp;
+            newUser.otpExpire = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+
+            // Send OTP to the user's email
+            const transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: process.env.EMAIL_PORT,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL_USERNAME,
+                    pass: process.env.EMAIL_PASSWORD,
+                },
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USERNAME,
+                to: newUser.email,
+                subject: 'OTP for Account Confirmation',
+                text: `Your OTP for account confirmation is: ${otp}`,
+                html: `<p>Your OTP for account confirmation is: <strong>${otp}</strong></p>`,
+            };
+
+            await transporter.sendMail(mailOptions);
+
+            res.status(201).json({ success: true, message: "An OTP has been sent to your email. Please enter it to confirm your account." });
+        } else {
+            // Generate a confirmation token for website users
+            const confirmationToken = crypto.randomBytes(32).toString('hex');
+            newUser.confirmationToken = crypto.createHash('sha256').update(confirmationToken).digest('hex');
+            newUser.confirmationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // Token expires in 24 hours
+
+            // Create confirmation URL
+            const confirmationUrl = `${process.env.FRONTEND_URL_FRONTEND_HOST}/confirm/${confirmationToken}`;
+
+            // Send confirmation link to the user's email
+            const transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: process.env.EMAIL_PORT,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL_USERNAME,
+                    pass: process.env.EMAIL_PASSWORD,
+                },
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USERNAME,
+                to: newUser.email,
+                subject: 'Account Confirmation',
+                text: `Please confirm your account by clicking the following link: ${confirmationUrl}`,
+                html: `<p>Please confirm your account by clicking the following link:</p><a href="${confirmationUrl}">${confirmationUrl}</a>`,
+            };
+
+            await transporter.sendMail(mailOptions);
+
+            res.status(201).json({ success: true, message: "A confirmation link has been sent to your email address. Please check your inbox or spam folder to confirm your account." });
+        }
 
         // Save the user to the database
         await newUser.save();
-
-        // Create confirmation URL
-        const confirmationUrl = `${process.env.FRONTEND_URL_FRONTEND_HOST}/confirm/${confirmationToken}`;
-
-        // Configure nodemailer transporter
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: process.env.EMAIL_PORT,
-            secure: false,
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-        });
-
-        // Email options
-        const mailOptions = {
-            from: process.env.EMAIL_USERNAME,
-            to: newUser.email,
-            subject: 'Account Confirmation',
-            text: `Please confirm your account by clicking the following link: ${confirmationUrl}`,
-            html: `<p>Please confirm your account by clicking the following link:</p><a href="${confirmationUrl}">${confirmationUrl}</a>`,
-        };
-
-        // Send the email
-        await transporter.sendMail(mailOptions);
-
-        res.status(201).json({ success: true, message: "A confirmation link has been sent to your email address. Please check your inbox or spam folder to confirm your account." });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Error occurred while registering the user" });
@@ -186,6 +215,36 @@ const confirmUser = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Error confirming account' });
+    }
+};
+
+const confirmOtp = async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        // Find the user by email
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "User not found" });
+        }
+
+        // Check if the OTP matches and is not expired
+        if (user.otp !== otp || user.otpExpire < Date.now()) {
+            return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+        }
+
+        // Confirm the user's account
+        user.isConfirmed = true;
+        user.otp = undefined;
+        user.otpExpire = undefined;
+
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Account confirmed successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error confirming account" });
     }
 };
 
@@ -471,4 +530,4 @@ const resetPassword = async (req, res) => {
 
 
 
-module.exports = { loginUser,loginAdmin, registerUser, confirmUser, forgotPassword, resetPassword , fetchUsers};
+module.exports = { loginUser,loginAdmin, registerUser, confirmOtp, confirmUser, forgotPassword, resetPassword , fetchUsers};

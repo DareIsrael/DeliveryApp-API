@@ -1,5 +1,5 @@
 const express = require("express");
-const { forgotPassword, loginUser, confirmUser, registerUser, resetPassword, loginAdmin, fetchUsers } = require('../controllers/UserController.js');
+const { forgotPassword, loginUser, confirmUser, confirmOtp, registerUser, resetPassword, loginAdmin, fetchUsers } = require('../controllers/UserController.js');
 const { authMiddleware} = require("../middleware/auth.js");
 // const { adminMiddleware } = require("../middleware/adminAuth.js")
 const rateLimit = require("express-rate-limit");
@@ -15,6 +15,7 @@ const limiter = rateLimit({
 userRouter.post("/register", registerUser);
 userRouter.post("/login", limiter, loginUser);
 userRouter.get('/confirm/:token', confirmUser);
+userRouter.post('/confirm-otp', confirmOtp);
 userRouter.post("/loginAdmin", limiter, loginAdmin);
 userRouter.get('/fetchUsers', fetchUsers)
 userRouter.post("/forgotpassword", forgotPassword);
